@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web became CLever</title>
+    <!--<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.min.css"/>-->
+    <link rel="stylesheet" href="libs/jquery-ui.min.css"/>
+    <!--<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css"/>-->
+    <link rel="stylesheet" href="libs/jquery.mobile-1.4.2.min.css"/>
+    <link rel="stylesheet" type="text/css" href="res/styles/layoutStyles.css">
+</head>
+<body>
+
+<!--<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>-->
+<script src="libs/jquery-1.11.0.min.js"></script>
+<!--<script src="http://code.jquery.com/ui/1.10.4/jquery-ui.min.js"></script>-->
+<script src="libs/jquery-ui.min.js"></script>
+<!--<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>-->
+<script src="libs/jquery.mobile-1.4.2.min.js"></script>
+<script src="libs/jquery.getimagedata.min.js"></script>
+
+<script type="text/javascript" src="scripts/BuffersManager.js"></script>
+<script type="text/javascript" src="scripts/CanvasManager.js"></script>
+<script type="text/javascript" src="scripts/Kernel.js"></script>
+<script type="text/javascript" src="scripts/KernelCore.js"></script>
+<script type="text/javascript" src="scripts/UIUtils.js"></script>
+<script type="text/javascript" src="scripts/WebCLConfig.js"></script>
+<script type="text/javascript" src="scripts/WebCLConnector.js"></script>
+<script type="text/javascript" src="libs/glMatrix-0.9.5.js"></script>
+<script type="text/javascript" src="scripts/WebGLProcess.js"></script>
+<script type="text/javascript" src="scripts/FastBlur.js"></script>
+
+<div class="header">
+</div>
+
+<script>
+    $(function () {
+        $('#accordion').accordion({
+            collapsible: true,
+            heightStyle: "content"
+        });
+    });
+</script>
+
+<div class="container">
+    <div id="accordion">
+        <h3>Platform</h3>
+
+        <div id="devicesInfo">
+            <select id="platformsDropdown" onchange="fillDevices('#platformsDropdown', '#devicesDropdown')">
+                <option selected="selected">Select a platform</option>
+            </select>
+            <select id="devicesDropdown" onchange="setDevice('#platformsDropdown', '#devicesDropdown')">
+                <option selected="selected">Select a device</option>
+            </select>
+            <script type="text/javascript">
+                globals.platformsList = listPlatforms('#platformsDropdown');
+            </script>
+        </div>
+
+        <h3>Source</h3>
+
+        <div id="input">
+            <div id="addNewInputButtonDiv">
+                <a href="#" data-role="button" data-theme="e" data-inline="true" id="addNewInputButton">Add new
+                    input</a>
+            </div>
+            <div id="newInputSettersDiv" class="popup">
+                <div id="newKernelSetterDiv">
+                    <select required id="kernelsDropdown">
+                        <option value="default" selected="selected">Select a kernel</option>
+                    </select>
+
+                    <div id='kernelValuesDiv'></div>
+                    <script type="text/javascript">
+                        fillKernels('#kernelsDropdown');
+                    </script>
+                </div>
+                <label id="inputTypeDropdownLabel">Input 1:</label>
+                <select required id="inputTypeDropdown">
+                    <option selected="selected" value="default">Select the type of input</option>
+                    <option value="url">URL</option>
+                    <option value="image">Image File</option>
+                    <option value="video">Video File</option>
+                    <option value="webcam">Web Camera</option>
+                    <option value="WebGL">WebGL</option>
+                </select>
+
+                <form>
+                    <div id="slideURLSection" class="popup">
+                        <input type="text" id="URLInput"/>
+                        <a href="#" data-role="button" data-theme="e" data-inline="true" id="convertButtonURL"
+                           onclick="setupCanvasURL('#URLInput', retrieveFreeCanvasFromPair('#URLSrc1', '#URLSrc2'))">Set
+                            Input</a>
+                        <a href="#" data-role="button" data-theme="e" data-inline="true" id="displayButtonURL"
+                           onclick="setupCanvas(currentCanvasFromPair('#URLSrc1', '#URLSrc2'), '#previewCanvas');">Display</a>
+                    </div>
+
+                    <div id="slideImageFileSection" class="popup">
+                        <input type="file" id="imageFileInput"
+                               style='visibility: hidden; position: fixed; left: -10000;'
+                               onchange="handleFiles(this.files, '#imageFileInput',
+                               '#imageFileInputText', retrieveFreeSrcFromPair('#imageSrc1', '#imageSrc2'))"
+                               accept="image/*"/>
+                        <input type="text" id="imageFileInputText" autocomplete="off"
+                               onclick="$('#imageFileInput').click()"/>
+                        <a href="#" data-role="button" data-theme="e" data-inline="true" id="displayButtonImageFile"
+                           onclick="setupCanvas(currentSrcFromPair('#imageSrc1', '#imageSrc2'), '#previewCanvas');">Display</a>
+                    </div>
+
+                    <div id="slideVideoFileSection" class="popup">
+                        <input type="file" id="videoFileInput"
+                               style='visibility: hidden; position: fixed; left: -10000;'
+                               onchange="handleFiles(this.files, '#videoFileInput', '#videoFileInputText',retrieveFreeSrcFromPair('#localVideo1', '#localVideo2'))"
+                               accept="video/*">
+                        <input type="text" id="videoFileInputText" autocomplete="off"
+                               onclick="$('#videoFileInput').click()"/>
+                    </div>
+
+                    <div id="slideWebGLSection" class="popup">
+                        <input type="file" id="textureFileInput"
+                               style='visibility: hidden; position: fixed; left: -10000;'
+                               onchange="handleFiles(this.files, '#textureFileInput',
+                               '#textureFileInputText', '#textureSrc')"
+                               accept="image/*"/>
+                        <input type="text" id="textureFileInputText" autocomplete="off"
+                               onclick="$('#textureFileInput').click()"/>
+                        <a href="#" data-role="button" data-theme="e" data-inline="true" id="displayButtonWebGL"
+                           onclick="webGLStart($('#textureSrc'), $('#previewWebGL'), $('#textureBuffCanvas'));">Set
+                            Texture</a>
+                    </div>
+
+                    <div>
+                        <a href="#" data-role="button" data-theme="e" data-inline="true" id="loadNewInputButton">Add</a>
+                    </div>
+
+                    <canvas id="previewWebGL" width="0" height="0"></canvas>
+                    <canvas id="previewCanvas" width="0" height="0"></canvas>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- VALIDATIONS UI BUTTONS CODE -->
+    <!-- UNCOMMENT THE TESTS THAT ARE NEEDED TO RUN-->
+    <!-- HOW TO USE: CLICKING THE BUTTON WILL CONFIGURE FRAMEWORK STRUCTURES -->
+    <!-- FOR PROCESSING THE TEST PIPELINE, AFTER THAT CLICK TRANSFORM BUTTON-->
+    <!--<button onclick="pipe11()">PIPE 1.1 (Pipe Serie - Imagen Gigante)</button>-->
+    <!--<button onclick="pipe12()">PIPE 1.2 (Pipe Serie - Imagen Lenna)</button>-->
+    <!--<button onclick="pipe2()">PIPE 2 (Pipe Basico - Webcam)</button>-->
+    <!--<button onclick="pipe3()">PIPE 3 (Pipe Serie y dual - Video y Frame)</button>-->
+    <!--<button onclick="pipe4()">PIPE 4 (Pipe Basico - WebGL)</button>-->
+    <!--<button onclick="desaturateImageJS()">DESATURATE IMAGE JS ENGINE</button>-->
+    <!--<button onclick="blurVideoJS()">BLUR VIDEO JS ENGINE</button>-->
+
+
+    <h3>Pipeline Review</h3>
+
+    <div id="pipelineResult">
+    </div>
+    <div id="pipelineReview">
+        <a href="#" data-role="button" data-theme="e" data-inline="true" id="convertButton"
+           onclick="startProcessingLoop('#pipelineResultCanvas', '#consoleLog');">Transform</a>
+        <canvas id="pipelineResultCanvas" height="0" width="0"></canvas>
+    </div>
+
+</div>
+
+<!-- CANVAS FOR COMPARING WHEN A CANVAS IS EMPTY -->
+<canvas id="blankCanvas" style="visibility: hidden; position: fixed; left: -10000;"></canvas>
+<!-- STRUCTURE FOR URL LOADING -->
+<canvas id="URLSrc1" style="visibility: hidden; position: fixed; left: -10000;"></canvas>
+<canvas id="URLSrc2" style="visibility: hidden; position: fixed; left: -10000;"></canvas>
+<!-- STRUCTURE FOR IMAGE LOADING -->
+<img id="imageSrc1" style="visibility: hidden; position: fixed; left: -10000;"/>
+<img id="imageSrc2" style="visibility: hidden; position: fixed; left: -10000;"/>
+<!-- STRUCTURE FOR WEBCAM LOADING -->
+<video id="camVideo" width="640" height="480" autoplay
+       style="visibility: hidden; position: fixed; left: -10000;"></video>
+<!-- STRUCTURE FOR VIDEO LOADING -->
+<video id="localVideo1" controls autobuffer
+       style="visibility: hidden; position: fixed; left: -10000;"></video>
+<video id="localVideo2" controls autobuffer
+       style="visibility: hidden; position: fixed; left: -10000;"></video>
+<!-- STRUCTURE FOR WEBGL LOADING -->
+<img id="textureSrc" style="visibility: hidden; position: fixed; left: -10000;"/>
+<canvas id="textureBuffCanvas" style="visibility: hidden; position: fixed; left: -10000;"></canvas>
+<canvas id="WebGLSrc1" style="visibility: hidden; position: fixed; left: -10000;"></canvas>
+<canvas id="WebGLSrc2" style="visibility: hidden; position: fixed; left: -10000;"></canvas>
+
+
+<script>
+    function retrieveFreeCanvasFromPair(src1, src2) {
+        if ($(src1)[0].toDataURL() != $('#blankCanvas')[0].toDataURL()) {
+            return src2;
+        }
+        else {
+            return src1;
+        }
+    }
+    function currentCanvasFromPair(src1, src2) {
+        if ($(src2)[0].toDataURL() != $('#blankCanvas')[0].toDataURL()) {
+            return src2;
+        }
+        else {
+            return src1;
+        }
+    }
+    function retrieveFreeSrcFromPair(src1, src2) {
+        if (typeof $(src1).attr('src') != 'undefined') {
+            return src2;
+        }
+        else {
+            return src1;
+        }
+    }
+    function currentSrcFromPair(src1, src2) {
+        if (typeof $(src2).attr('src') != 'undefined') {
+            return src2;
+        }
+        else {
+            return src1;
+        }
+    }
+</script>
+
+<!--CODE FOR WEBCAM HANDLING -->
+<script>
+    function drawCam() {
+        // Grab elements, create settings, etc.
+        var video = $('#camVideo')[0],
+                videoObj = { "video": true },
+                errBack = function (error) {
+                    console.log("Video capture error: ", error.code);
+                };
+        // Create the generic variables according to browser aka Magic Steps
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+
+        if (navigator.getUserMedia) {
+            navigator.getUserMedia(videoObj, function successCallback(stream) {
+                video.src = window.URL.createObjectURL(stream);
+                video.play();
+            }, errBack);
+        }
+    }
+</script>
+
+<script type="text/javascript">
+//When a kernel is selected from the dropdown list, check if any property is modifiable.
+$("#kernelsDropdown").change(function () {
+    $('#kernelValuesDiv').empty();
+    var kernelSelected = $('#kernelsDropdown').find(':selected').val();
+    //If element selected is the placeholder value then do nothing
+    if (kernelSelected == "default") {
+        return;
+    }
+    else if (kernelSelected != "custom") {
+        globals.selectedKernelProperties = loadProperties(kernelSelected);
+        setDefValueInputs('#kernelValuesDiv');
+    }
+    else {
+        var propertiesTextArea = $('<textarea/>', {
+            id: 'customPropertiesTextArea', rows: 10, cols: 40,
+            style: "resize: none; float: left;"});
+        var predefinedValuePropertiesTextArea = "Write your kernel properties here";
+        propertiesTextArea.val(predefinedValuePropertiesTextArea);
+        propertiesTextArea.on('focus', function () {
+            if (propertiesTextArea.val() == predefinedValuePropertiesTextArea) {
+                propertiesTextArea.val('');
+            }
+        });
+        propertiesTextArea.on('blur', function () {
+            if (propertiesTextArea.val() == '') {
+                propertiesTextArea.val(predefinedValuePropertiesTextArea);
+            }
+        });
+        var kernelTextArea = $('<textarea/>', {
+            id: 'customKernelTextArea', rows: 25, cols: 50,
+            style: "resize: none; float: left; margin:5px;"});
+        var predefinedKernelTextAreaValue = "Write your kernel code here";
+        kernelTextArea.val(predefinedKernelTextAreaValue);
+        kernelTextArea.on('focus', function () {
+            if (kernelTextArea.val() == predefinedKernelTextAreaValue) {
+                kernelTextArea.val('');
+            }
+        });
+        kernelTextArea.on('blur', function () {
+            if (kernelTextArea.val() == '') {
+                kernelTextArea.val(predefinedKernelTextAreaValue);
+            }
+        });
+        var showExampleButton = $('<button/>',
+                {
+                    text: 'Show example',
+                    click: function () {
+                        fillCustomKernelExample('#' + kernelTextArea.attr('id'),
+                                '#' + propertiesTextArea.attr('id'));
+                    }
+                });
+        var loadExampleButton = $('<button/>',
+                {
+                    text: 'Load kernel',
+                    click: function () {
+                        globals.selectedKernelProperties = jQuery.parseJSON(propertiesTextArea.val());
+                        globals.customKernelSrc = kernelTextArea.val();
+                        setDefValueInputs('#kernelValuesDiv');
+                        kernelTextArea.hide();
+                        propertiesTextArea.hide();
+                        loadExampleButton.hide();
+                        showExampleButton.hide();
+                    }
+                });
+
+        $('#newKernelSetterDiv').append(propertiesTextArea)
+                .append(kernelTextArea)
+                .append(showExampleButton)
+                .append(loadExampleButton);
+    }
+});
+
+$("#inputTypeDropdown").change(function () {
+    var value = this.value;
+    if (value == "default") {
+        return;
+    }
+    else if (value == "url") {
+        //Clean input
+        $('#URLInput').val("");
+        $('#slideURLSection').fadeIn('slow');
+        $('#slideVideoFileSection').hide();
+        $('#slideImageFileSection').hide();
+        $('#slideWebGLSection').hide();
+    }
+    else if (value == "image") {
+        //Clean input
+        $('#imageFileInputText').val("");
+        $('#slideURLSection').hide();
+        $('#slideVideoFileSection').hide();
+        $('#slideImageFileSection').fadeIn('slow');
+        $('#slideWebGLSection').hide();
+    }
+    else if (value == "video") {
+        //Clean input
+        $('#videoFileInputText').val("");
+        $('#slideURLSection').hide();
+        $('#slideVideoFileSection').fadeIn('slow');
+        $('#slideImageFileSection').hide();
+        $('#slideWebGLSection').hide();
+    }
+    else if (value == "webcam") {
+        $('#slideURLSection').hide();
+        $('#slideVideoFileSection').hide();
+        $('#slideImageFileSection').hide();
+        $('#slideWebGLSection').hide();
+        drawCam();
+    }
+    else if (value == "WebGL") {
+        //Clean input
+        $('#textureFileInputText').val("");
+        $('#slideURLSection').hide();
+        $('#slideVideoFileSection').hide();
+        $('#slideImageFileSection').hide();
+        $('#slideWebGLSection').fadeIn('slow');
+    }
+});
+
+//Function when "Add new input" is clicked.
+$("#addNewInputButtonDiv").click(function () {
+    //Hide all the slides for input
+    $('#slideURLSection').hide();
+    $('#slideVideoFileSection').hide();
+    $('#slideImageFileSection').hide();
+    $('#slideCameraSection').hide();
+    $('#slideWebGLSection').hide();
+
+    $('#addNewInputButtonDiv').hide();
+    $('#kernelsDropdown').val('default').change();
+    $("#inputTypeDropdown").val('default').change();
+    $('#newInputSettersDiv').fadeIn('slow');
+});
+
+//Function that adds the kernel to the pipeline
+$("#loadNewInputButton").click(function () {
+    globals.inputsLoaded++;
+    var inputValue = $('#inputTypeDropdown').find(':selected').val();
+    var WebGLSourceLoading = false;
+    var source;
+    if (inputValue.contains('Kernel')) {
+        globals.pipelineInputsArray.push({src: inputValue});
+    }
+    else if (inputValue == "video") {
+        globals.pipelineContainsStream = true;
+        // If localVideo2 has content then localVideo1 was previously loaded into sources array
+        if (typeof $('#localVideo2').attr('src') != 'undefined') {
+            source = $('#localVideo2');
+        }
+        else {
+            source = $('#localVideo1');
+        }
+        globals.pipelineInputsArray.push({src: source, isStream: true});
+    }
+    else if (inputValue == "webcam") {
+        globals.pipelineContainsStream = true;
+        source = $('#camVideo');
+        globals.pipelineInputsArray.push({src: source, isStream: true});
+    }
+    else if (inputValue == "url") {
+        // If URLSrc2 has content then URLSrc1 was previously loaded into sources array
+        if ($('#URLSrc2')[0].toDataURL() != $('#blankCanvas')[0].toDataURL()) {
+            source = $('#URLSrc2');
+        }
+        else {
+            source = $('#URLSrc1');
+        }
+        globals.pipelineInputsArray.push({src: source, isStream: false});
+    }
+    else if (inputValue == "image") {
+        // If imageSrc2 has content then imageSrc1 was previously loaded into sources array
+        if (typeof $('#imageSrc2').attr('src') != 'undefined') {
+            source = $('#imageSrc2');
+        }
+        else {
+            source = $('#imageSrc1');
+        }
+        globals.pipelineInputsArray.push({src: source, isStream: false});
+    }
+    else if (inputValue == "WebGL") {
+        // If WebGLSrc2 has content then WebGLSrc1 was previously loaded into sources array
+        if ($('#WebGLSrc2')[0].toDataURL() != $('#blankCanvas')[0].toDataURL()) {
+            source = $('#WebGLSrc2');
+        }
+        else {
+            source = $('#WebGLSrc1');
+        }
+        clearInterval(drawingWebGL);
+        WebGLSourceLoading = true;
+        var img = $('<img/>');
+        img.load(function () {
+            source.attr('width', $('#previewWebGL').width());
+            source.attr('height', $('#previewWebGL').height());
+            source[0].getContext('2d').drawImage(img[0], 0, 0);
+            WebGLSourceLoading = false;
+            $('#previewWebGL').attr('width', 0);
+            $('#previewWebGL').attr('height', 0);
+        });
+        img.attr('src', $('#previewWebGL')[0].toDataURL());
+        globals.pipelineInputsArray.push({src: source, isStream: false});
+    }
+    if (globals.inputsLoaded < globals.selectedKernelProperties.buffersInCount) {
+        $('#inputTypeDropdownLabel').text("Input " + (globals.inputsLoaded + 1) + ":");
+        $("#inputTypeDropdown").val('default').change();
+        //Hide all the slides for input
+        $('#slideURLSection').hide();
+        $('#slideVideoFileSection').hide();
+        $('#slideImageFileSection').hide();
+        $('#slideWebGLSection').hide();
+    }
+    else {
+        // Attempt to compile every 1/4 sec waiting to WebGL source to be ready to copy into buffers
+        compilePolling = setInterval(function () {
+            if (!WebGLSourceLoading) {
+                updatePropertiesValues();
+                var newKernelID = addKernelToPipeline($('#kernelsDropdown').find(':selected').val(),
+                        globals.selectedKernelProperties, globals.pipelineInputsArray, '#consoleLog');
+                createPipelineInputDiv(newKernelID, '#kernelsDropdown', '#inputTypeDropdown', '#pipelineResult');
+                $('#inputTypeDropdown').append($('<option/>').val(newKernelID).text(newKernelID));
+                $('#addNewInputButtonDiv').fadeIn('slow');
+                $('#newInputSettersDiv').hide();
+                globals.selectedKernelProperties = null;
+                globals.customKernelSrc = null;
+                globals.pipelineInputsArray = [];
+                globals.inputsLoaded = 0;
+                $('#imageSrc1').attr('src', null);
+                $('#imageSrc2').attr('src', null);
+                cleanupCanvas('#URLSrc1');
+                cleanupCanvas('#URLSrc2');
+                cleanupCanvas('#WebGLSrc1');
+                cleanupCanvas('#WebGLSrc2');
+                clearInterval(compilePolling);
+            }
+        }, 250);
+    }
+    cleanupCanvas('#previewCanvas');
+});
+
+/**
+ *
+ */
+function updatePropertiesValues() {
+    var args = globals.selectedKernelProperties.kernelArgs;
+    for (var i in args) {
+        if (args[i].defValue != null) {
+            var input = $('#kernelValuesDiv').find('#' + args[i].argName + "Input");
+            args[i].defValue = input.val();
+        }
+    }
+}
+
+/**
+ *
+ * VALIDATIONS CODE
+ *
+ */
+
+/**
+ * Serial Pipe Negative - Gradient3x3 ; Big image
+ */
+function pipe11() {
+    // Path to file inside server
+    pipe1('WebContent/huge.jpg');
+}
+
+/**
+ * Serial Pipe Negative - Gradient3x3 ; Small image
+ */
+function pipe12() {
+    // Path to file inside server
+    pipe1('WebContent/image1.png');
+}
+
+function pipe1(path) {
+    // Defining input1 for Kernel1
+    var input1Kernel1 = $('<img/>')
+            .attr('id', 'testImgPipe1')
+            .attr('style', "visibility: hidden; position: fixed; left: -10000;");
+    // Continuing execution after image is loaded
+    input1Kernel1.load(function () {
+        globals.selectedKernelProperties = loadProperties('Negative2D');
+        globals.pipelineContainsStream = false;
+        //Adding source to inputsArray
+        globals.pipelineInputsArray.push({src: input1Kernel1, isStream: false});
+        // Compiling stage
+        addKernelToPipeline('Negative2D',
+                globals.selectedKernelProperties, globals.pipelineInputsArray, '#consoleLog');
+        globals.selectedKernelProperties = null;
+        globals.pipelineInputsArray = [];
+
+        // Defining input 1 for kernel2
+        var input1Kernel2 = 'Kernel1';
+        globals.selectedKernelProperties = loadProperties('Gradient3x3');
+        //Adding source to inputsArray
+        globals.pipelineInputsArray.push({src: input1Kernel2});
+        // Compiling
+        addKernelToPipeline('Gradient3x3',
+                globals.selectedKernelProperties, globals.pipelineInputsArray, '#consoleLog');
+        // Cleaning structures
+        globals.selectedKernelProperties = null;
+        globals.pipelineInputsArray = [];
+    })
+    input1Kernel1.attr('src', path);
+    $('body').append(input1Kernel1);
+}
+
+/**
+ * Basic Pipe Blur2D ; Webcam
+ */
+function pipe2() {
+    // Defining input1 for Kernel1
+    drawCam();
+    // Continue execution after webcam started streaming
+    $('#camVideo').on('durationchange', function () {
+        // Waiting 500ms for continuing
+        setTimeout(function () {
+            globals.selectedKernelProperties = loadProperties('Blur2D');
+            globals.pipelineContainsStream = true;
+            //Adding source to inputsArray
+            globals.pipelineInputsArray.push({src: $('#camVideo'), isStream: true});
+            // Compiling stage
+            addKernelToPipeline('Blur2D',
+                    globals.selectedKernelProperties, globals.pipelineInputsArray, '#consoleLog');
+            // Cleaning structures
+            globals.selectedKernelProperties = null;
+            globals.pipelineInputsArray = [];
+        }, 500);
+    });
+}
+
+/**
+ * Mixed Pipe Desaturate2D on Video - Arithmetic2D on Video & Frame Image
+ */
+function pipe3() {
+    // Defining input1 for Kernel1
+    var input1Kernel1 = $('<video/>')
+            .attr('id', 'testVideoPipe3')
+            .attr('style', "visibility: hidden; position: fixed; left: -10000;");
+    // Continuing execution after video is loaded
+    input1Kernel1.on('canplay', function () {
+        if (input1Kernel1[0].paused) {
+            globals.selectedKernelProperties = loadProperties('Desaturate2D');
+            globals.pipelineContainsStream = true;
+            //Adding source to inputsArray
+            globals.pipelineInputsArray.push({src: input1Kernel1, isStream: true});
+            // Compiling stage
+            addKernelToPipeline('Desaturate2D',
+                    globals.selectedKernelProperties, globals.pipelineInputsArray, '#consoleLog');
+            globals.selectedKernelProperties = null;
+            globals.pipelineInputsArray = [];
+
+            // Defining input 1 for kernel2
+            var input1Kernel2 = 'Kernel1';
+            globals.selectedKernelProperties = loadProperties('Arithmetic2D');
+            //Adding source to inputsArray
+            globals.pipelineInputsArray.push({src: input1Kernel2});
+            var input2Kernel2 = $('<img/>')
+                    .attr('id', 'testImgPipe3')
+                    .attr('style', "visibility: hidden; position: fixed; left: -10000;");
+            // Continuing execution after frame is loaded
+            input2Kernel2.load(function () {
+                globals.pipelineInputsArray.push({src: input2Kernel2, isStream: false});
+                // Selecting operation for frame compositing
+                globals.selectedKernelProperties.kernelArgs[5].defValue = 6;
+                // Compiling
+                addKernelToPipeline('Arithmetic2D',
+                        globals.selectedKernelProperties, globals.pipelineInputsArray, '#consoleLog');
+                // Cleaning structures
+                globals.selectedKernelProperties = null;
+                globals.pipelineInputsArray = [];
+            })
+            // Path to file inside server
+            input2Kernel2.attr('src', 'WebContent/Frame720x400.jpg');
+            $('body').append(input2Kernel2);
+        }
+    });
+    // Path to file inside server
+    input1Kernel1.attr('src', 'WebContent/big_buck_bunny_480p.ogv');
+    $('body').append(input1Kernel1);
+
+}
+
+/**
+ * Basic Pipe Sepia2D ; WebGL
+ */
+function pipe4() {
+    // Defining input1 for Kernel1
+    var input1Kernel1 = $('<img/>')
+            .attr('id', 'testImgPipe4')
+            .attr('style', "visibility: hidden; position: fixed; left: -10000;");
+    // Continuing execution after 200ms
+    setTimeout(function () {
+        globals.selectedKernelProperties = loadProperties('Sepia2D');
+        globals.pipelineContainsStream = false;
+        var previewWebGLCanvas = $('<canvas/>')
+                .attr('id', 'testPrevCanvasPipe4')
+                .attr('style', "visibility: hidden; position: fixed; left: -10000;");
+        $('body').append(previewWebGLCanvas);
+        webGLStart(input1Kernel1, previewWebGLCanvas, $('#textureBuffCanvas'));
+        // Continuing execution after 200ms
+        setTimeout(function () {
+            clearInterval(drawingWebGL);
+            var webGLSourceCanvas = $('#WebGLSrc1');
+            var img = $('<img/>');
+            img.load(function () {
+                webGLSourceCanvas.attr('width', previewWebGLCanvas.width());
+                webGLSourceCanvas.attr('height', previewWebGLCanvas.height());
+                webGLSourceCanvas[0].getContext('2d').drawImage(img[0], 0, 0);
+                addKernelToPipeline('Sepia2D',
+                        globals.selectedKernelProperties, globals.pipelineInputsArray, '#consoleLog');
+            })
+            img.attr('src', previewWebGLCanvas[0].toDataURL());
+            globals.pipelineInputsArray.push({src: webGLSourceCanvas, isStream: false});
+        }, 200);
+    }, 200);
+    $('body').append(input1Kernel1);
+    // Path to file inside server
+    input1Kernel1.attr('src', 'WebContent/earthTexture.jpg');
+}
+
+/**
+ * Desaturate over pure JS ; Big image
+ */
+function desaturateImageJS() {
+    var img = $('<img/>')
+            .attr('id', 'testImgDesaturateJS')
+            .attr('style', "visibility: hidden; position: fixed; left: -10000;");
+    img.load(function () {
+        var canvas = $('#pipelineResultCanvas');
+        setupCanvas(img, canvas);
+
+        var jsKernelApplyTime = new Date().getTime();
+
+        var canvasCtx = canvas[0].getContext('2d');
+        var pixels = canvasCtx.getImageData(0, 0, canvas.width(), canvas.height());
+        var pixelsData = pixels.data;
+
+        var ptr = -1;
+        var end = ptr + canvas.width() * canvas.height() * 4;
+        do {
+            var r, g, b, grey;
+            r = ++ptr;
+            g = ++ptr;
+            b = ++ptr;
+            grey = 0.30 * pixelsData[r] + 0.59 * pixelsData[g] + 0.11 * pixelsData[b];
+            pixelsData[r] = grey;
+            pixelsData[g] = grey;
+            pixelsData[b] = grey;
+            pixelsData[++ptr] = 255;
+        } while (ptr != end);
+
+        var jsKernelApplyExecutionTime = new Date().getTime() - jsKernelApplyTime;
+        console.log("Kernel Desaturate applied WITH JS in " + jsKernelApplyExecutionTime + " ms");
+
+        canvasCtx.putImageData(pixels, 0, 0);
+    });
+    // Path to file inside server
+    img.attr('src', 'WebContent/huge.jpg');
+    $('body').append(img);
+}
+
+/**
+ * Blur over pure JS ; Video
+ */
+function blurVideoJS() {
+    var video = $('<video/>')
+            .attr('id', 'testVidDesaturateJS')
+            .attr('style', "visibility: hidden; position: fixed; left: -10000;");
+    video.on('canplay', function () {
+        video[0].play();
+
+        setInterval(function () {
+            var canvas = $('#pipelineResultCanvas');
+            setupCanvas(video, canvas);
+            var jsKernelApplyTime = new Date().getTime();
+            boxBlurCanvasRGB('pipelineResultCanvas', 0, 0, canvas.width(), canvas.height(), 9, 1);
+            var jsKernelApplyExecutionTime = new Date().getTime() - jsKernelApplyTime;
+            console.log("Kernel Blur applied WITH JS in " + jsKernelApplyExecutionTime + " ms");
+        }, 80);
+    });
+    // Path to file inside server
+    video.attr('src', 'WebContent/transformers_1080p.mp4');
+    $('body').append(video);
+}
+
+</script>
+
+</body>
+</html>
+
